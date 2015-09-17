@@ -24,6 +24,29 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 public class SuperTable{
 
+	private static void addRow(Table hTable, String key, String hero, String power, String name, String xp) {
+
+	      // Instantiating Put class
+              // Hint: Accepts a row name
+		Put p = new Put(Bytes.toBytes(key));
+
+      	      // Add values using add() method
+              // Hints: Accepts column family name, qualifier/row name ,value
+          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("hero"), 		Bytes.toBytes(hero));
+          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("power"), 	Bytes.toBytes(power));
+          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("name"), 		Bytes.toBytes(name));
+          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("xp"),   		Bytes.toBytes(xp));
+	
+		try {
+			hTable.put(p);
+			System.out.println(key + " inserted");
+		} catch (IOException ex) {
+	            System.err.println(ex.getMessage());
+        	    ex.printStackTrace();
+	            System.exit(1);
+		}
+	}
+
    public static void main(String[] args) throws IOException {
 
       // Instantiate Configuration class
@@ -68,19 +91,9 @@ public class SuperTable{
       Table hTable = conn.getTable(tableName);
      
       // Repeat these steps as many times as necessary
-
-	      // Instantiating Put class
-              // Hint: Accepts a row name
-		Put p = new Put(Bytes.toBytes("row1"));
-
-      	      // Add values using add() method
-              // Hints: Accepts column family name, qualifier/row name ,value
-          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("hero"), 		Bytes.toBytes("superman"));
-          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("power"), 	Bytes.toBytes("strength"));
-          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("name"), 		Bytes.toBytes("clark"));
-          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("xp"),   		Bytes.toBytes("100"));
-		hTable.put(p);
-		System.out.println("row1 inserted");
+	addRow(hTable, "row1", "superman", 	"strength", 	"clark", "100");
+	addRow(hTable, "row2", "batman", 	"money", 	"bruce", "50");
+	addRow(hTable, "row3", "wolverine", 	"healing", 	"logan", "75");
 
       // Save the table -> not needed ?	
       // Close table -> need to keep table open for scanner
@@ -90,16 +103,18 @@ public class SuperTable{
 
           // Scanning the required columns
           scan.addColumn(Bytes.toBytes("personal"), 	Bytes.toBytes("hero"));
-          scan.addColumn(Bytes.toBytes("personal"), 	Bytes.toBytes("power"));
-          scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("name"));
-          scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("xp"));
+          //scan.addColumn(Bytes.toBytes("personal"), 	Bytes.toBytes("power"));
+          //scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("name"));
+          //scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("xp"));
 
           // Getting the scan result
           try (ResultScanner scanner = hTable.getScanner(scan)) {
 
               // Reading values from scan result
-              for (Result result = scanner.next(); result != null; result = scanner.next())
-	              System.out.println("Found row : " + result);
+              	for (Result result = scanner.next(); result != null; result = scanner.next()) {
+	              //System.out.println("Found row : " + result);
+	              System.out.println(result);
+		}	
 	
 	      // Close the scanner
 		scanner.close();
