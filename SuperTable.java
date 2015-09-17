@@ -13,7 +13,8 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 
-import org.apache.hadoop.hbase.client.HTable;
+//import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -26,26 +27,26 @@ public class SuperTable{
    public static void main(String[] args) throws IOException {
 
       // Instantiate Configuration class
-      Configuration con = HBaseConfiguration.create();
+      Configuration config = HBaseConfiguration.create();
 
       // Instantiate HBaseAdmin class
       try {
-	   ConnectionFactory.createConnection(con).getAdmin();
+	   ConnectionFactory.createConnection(config).getAdmin();
       } catch (Exception ex) {
             System.err.println(ex.getMessage());
             ex.printStackTrace();
             System.exit(1);
       }
-      Admin admin = ConnectionFactory.createConnection(con).getAdmin();
+      Connection conn = ConnectionFactory.createConnection(config);
+      Admin admin = conn.getAdmin();
       
       // Instantiating table descriptor class
-      HTableDescriptor tableDescriptor = new HTableDescriptor(TableName.valueOf("powers"));
+      TableName tableName = TableName.valueOf("powers");
+      HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
 
       // Adding column families to table descriptor
-      tableDescriptor.addFamily(new HColumnDescriptor("hero"));
-      tableDescriptor.addFamily(new HColumnDescriptor("power"));
-      tableDescriptor.addFamily(new HColumnDescriptor("name"));
-      tableDescriptor.addFamily(new HColumnDescriptor("xp"));
+      tableDescriptor.addFamily(new HColumnDescriptor("personal"));
+      tableDescriptor.addFamily(new HColumnDescriptor("professional"));
 
       // Execute the table through admin
       try {
@@ -55,7 +56,7 @@ public class SuperTable{
           System.err.println("TableExistsException: " + ex.getMessage());
           //ex.printStackTrace();
           //System.exit(1);
-          System.out.println(" Table powers already exists ");
+          System.out.println(" Table " + tableName + " already exists ");
       } catch (Exception ex) {
             System.err.println(ex.getMessage());
             ex.printStackTrace();
@@ -63,31 +64,50 @@ public class SuperTable{
       }
 
       // Instantiating HTable class
+      //HTable hTable = new HTable(con, tableName);
+      Table hTable = conn.getTable(tableName);
      
       // Repeat these steps as many times as necessary
 
 	      // Instantiating Put class
               // Hint: Accepts a row name
+		Put p = new Put(Bytes.toBytes("row1"));
 
       	      // Add values using add() method
               // Hints: Accepts column family name, qualifier/row name ,value
+          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("hero"), 		Bytes.toBytes("superman"));
+          	p.addColumn(Bytes.toBytes("personal"), 		Bytes.toBytes("power"), 	Bytes.toBytes("strength"));
+          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("name"), 		Bytes.toBytes("clark"));
+          	p.addColumn(Bytes.toBytes("professional"), 	Bytes.toBytes("xp"),   		Bytes.toBytes("100"));
+		hTable.put(p);
+		System.out.println("row1 inserted");
 
-      // Save the table
-	
-      // Close table
+      // Save the table -> not needed ?	
+      // Close table -> need to keep table open for scanner
 
       // Instantiate the Scan class
+          Scan scan = new Scan();
+
+          // Scanning the required columns
+          scan.addColumn(Bytes.toBytes("personal"), 	Bytes.toBytes("hero"));
+          scan.addColumn(Bytes.toBytes("personal"), 	Bytes.toBytes("power"));
+          scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("name"));
+          scan.addColumn(Bytes.toBytes("professional"), Bytes.toBytes("xp"));
+
+          // Getting the scan result
+          try (ResultScanner scanner = hTable.getScanner(scan)) {
+
+              // Reading values from scan result
+              for (Result result = scanner.next(); result != null; result = scanner.next())
+	              System.out.println("Found row : " + result);
+	
+	      // Close the scanner
+		scanner.close();
+          }
      
-      // Scan the required columns
-
-      // Get the scan result
-
-      // Read values from scan result
-      // Print scan result
- 
-      // Close the scanner
    
       // Htable closer
+	hTable.close();
    }
 }
 
