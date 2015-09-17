@@ -5,10 +5,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.TableExistsException;
 
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+//import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -22,14 +26,41 @@ public class SuperTable{
    public static void main(String[] args) throws IOException {
 
       // Instantiate Configuration class
+      Configuration con = HBaseConfiguration.create();
 
-      // Instaniate HBaseAdmin class
+      // Instantiate HBaseAdmin class
+      try {
+	   ConnectionFactory.createConnection(con).getAdmin();
+      } catch (Exception ex) {
+            System.err.println(ex.getMessage());
+            ex.printStackTrace();
+            System.exit(1);
+      }
+      Admin admin = ConnectionFactory.createConnection(con).getAdmin();
       
-      // Instantiate table descriptor class
+      // Instantiating table descriptor class
+      HTableDescriptor tableDescriptor = new HTableDescriptor(TableName.valueOf("powers"));
 
-      // Add column families to table descriptor
+      // Adding column families to table descriptor
+      tableDescriptor.addFamily(new HColumnDescriptor("hero"));
+      tableDescriptor.addFamily(new HColumnDescriptor("power"));
+      tableDescriptor.addFamily(new HColumnDescriptor("name"));
+      tableDescriptor.addFamily(new HColumnDescriptor("xp"));
 
       // Execute the table through admin
+      try {
+	  admin.createTable(tableDescriptor);
+          System.out.println(" Table powers created ");
+      } catch (TableExistsException ex) {
+          System.err.println("TableExistsException: " + ex.getMessage());
+          //ex.printStackTrace();
+          //System.exit(1);
+          System.out.println(" Table powers already exists ");
+      } catch (Exception ex) {
+            System.err.println(ex.getMessage());
+            ex.printStackTrace();
+            System.exit(1);
+      }
 
       // Instantiating HTable class
      
